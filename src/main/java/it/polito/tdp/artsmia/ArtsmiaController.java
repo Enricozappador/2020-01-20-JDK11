@@ -1,8 +1,11 @@
 package it.polito.tdp.artsmia;
 
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.artsmia.db.Adiacenza;
 import it.polito.tdp.artsmia.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,7 +34,7 @@ public class ArtsmiaController {
     private Button btnCalcolaPercorso;
 
     @FXML
-    private ComboBox<?> boxRuolo;
+    private ComboBox<String> boxRuolo;
 
     @FXML
     private TextField txtArtista;
@@ -43,22 +46,74 @@ public class ArtsmiaController {
     void doArtistiConnessi(ActionEvent event) {
     	txtResult.clear();
     	txtResult.appendText("Calcola artisti connessi");
+    	List<Adiacenza> adiacenze = this.model.getAdiacenze(); 
+    	if(adiacenze == null) {
+    		txtResult.appendText("Devi prima creare il grafo!!");
+    		return;
+    	}
+    	
+    	Collections.sort(adiacenze);
+    	
+    	for(Adiacenza a : adiacenze) {
+    		txtResult.appendText(String.format("(%d, %d) = %d\n", a.getA1(), a.getA2(), a.getPeso()));
+    	}
+    	
     }
 
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
     	txtResult.clear();
     	txtResult.appendText("Calcola percorso");
+    	
+    	Integer id; 
+    	
+    	try {
+    	
+    	id= Integer.parseInt(txtArtista.getText()); 
+    	
+    	}catch(NumberFormatException e){
+    		txtResult.appendText("Inserire ID nel formato corretto!");
+    		return; 
+    		
+    		
+    	}
+    	
+    	if(!this.model.grafoContiene(id)) {
+    		txtResult.appendText("L'artista non è nel grafo");
+    		return; 
+    	}
+    	
+    	List<Integer> percorso = this.model.trovaPercorso(id); 
+    	txtResult.appendText("Percorso più lungo : "+percorso.size()+"\n");
+    	for(Integer v : percorso) {
+    		txtResult.appendText(v+" ");
+    		
+    	}
+    	
+    	
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
     	txtResult.appendText("Crea grafo");
+    	
+    	String ruolo = this.boxRuolo.getValue(); 
+    	if(ruolo == null) {
+    		txtResult.appendText("Seleziona un rulo!!");
+    		return; 
+    	}
+    	this.model.creaGrafo(ruolo);
+    	txtResult.appendText(String.format("Grafo Creato con %d vertici e %d  archi", this.model.vertici(), this.model.archi()));
+    	
+    	
+    	btnCalcolaPercorso.setDisable(false);
     }
 
     public void setModel(Model model) {
     	this.model = model;
+    	btnCalcolaPercorso.setDisable(true);
+    	boxRuolo.getItems().addAll(this.model.getRuoli());
     }
 
     
